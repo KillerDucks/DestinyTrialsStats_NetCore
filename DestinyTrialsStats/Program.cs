@@ -25,10 +25,21 @@ namespace DestinyTrialsStats
                     {
                         if (GetBungieAcc("TacticalNexus4") == "SUCCESS")
                         {
-                            if (GetDestinyAccount() == "SUCCESS")
+                            Console.WriteLine("We are at if: 1");
+                            var xy = GetDestinyAccount();
+                            if (xy == "SUCCESS")
                             {
+                                Console.WriteLine("We are at if: 2");
                                 GetTrialsData();
+                            } else
+                            {
+                                Console.WriteLine("Error on 2nd If");
+                                Console.WriteLine("Bungie Member ID: " + PlayerCharater.BungMembID);
+                                Console.WriteLine(xy);
                             }
+                        } else
+                        {
+                            Console.WriteLine("Error on 1st If");
                         }
                     }
                 }
@@ -87,18 +98,17 @@ namespace DestinyTrialsStats
             {
                 using (var client = new HttpClient())
                 {
-                    int x = 0;
-                    foreach (var i in PlayerCharater.Characters)
+                    client.DefaultRequestHeaders.Add("X-API-Key", "1d7e2d7bb0db43618efa3993660282ae");
+                    for (int i = 0; i < 3; i++)
                     {
-                        client.DefaultRequestHeaders.Add("X-API-Key", "1d7e2d7bb0db43618efa3993660282ae");
-                        var res = client.GetAsync("https://www.bungie.net/platform/Destiny/Stats/1/" + PlayerCharater.DestMembID + "/" + PlayerCharater.Characters[x++] + "/?modes=TrialsOfOsiris").Result;
+                        var res = client.GetAsync("https://www.bungie.net/platform/Destiny/Stats/1/" + PlayerCharater.DestMembID + "/" + PlayerCharater.Characters[i] + "/?modes=TrialsOfOsiris").Result;
                         if (res.IsSuccessStatusCode)
                         {
                             string resultContent = res.Content.ReadAsStringAsync().Result;
                             JObject json = JObject.Parse(resultContent);
                             dynamic jsonDe = JsonConvert.DeserializeObject(json.ToString());
+                            Console.WriteLine(PlayerCharater.CharactersInfo[i]);
                             Console.WriteLine(jsonDe.Response.trialsOfOsiris.allTime.killsDeathsRatio.basic.displayValue);
-                            return res.ToString();
                         }
                         else
                         {
@@ -106,7 +116,7 @@ namespace DestinyTrialsStats
                             return "ERROR";
                         }
                     }
-                    return "NOT HERE TRIALS";
+                    return "PRINTED TO SCREEN";
                 }
             }
             catch
@@ -169,12 +179,24 @@ namespace DestinyTrialsStats
                         string resultContent = res.Content.ReadAsStringAsync().Result;
                         JObject json = JObject.Parse(resultContent);
                         dynamic jsonDe = JsonConvert.DeserializeObject(json.ToString());
-                        foreach (var i in jsonDe)
+                        for (int i = 0; i < 3; i++)
                         {
+                            Console.WriteLine("Char ID: " + jsonDe.Response.destinyAccounts[0].characters[i].characterId);
                             PlayerCharater.Characters[i] = jsonDe.Response.destinyAccounts[0].characters[i].characterId;
-                            PlayerCharater.CharactersInfo[i] = jsonDe.Response.destinyAccounts[0].characters[i].characterClass.className;
+                            if (jsonDe.Response.destinyAccounts[0].characters[i].gender.genderName == "Male")
+                            {
+                                Console.WriteLine("Char Class: " + jsonDe.Response.destinyAccounts[0].characters[i].race.raceNameMale + " - " + jsonDe.Response.destinyAccounts[0].characters[i].characterClass.className);
+                                PlayerCharater.CharactersInfo[i] = jsonDe.Response.destinyAccounts[0].characters[i].race.raceNameMale + " - " + jsonDe.Response.destinyAccounts[0].characters[i].characterClass.className;
+                            } else
+                            {
+                                Console.WriteLine("Char Class: " + jsonDe.Response.destinyAccounts[0].characters[i].race.raceNameFemale + " - " + jsonDe.Response.destinyAccounts[0].characters[i].characterClass.className);
+                                PlayerCharater.CharactersInfo[i] = jsonDe.Response.destinyAccounts[0].characters[i].race.raceNameFemale + " - " + jsonDe.Response.destinyAccounts[0].characters[i].characterClass.className;
+                            }                 
+                            //PlayerCharater.Characters[i] = jsonDe.Response.destinyAccounts[0].characters[i].characterId;
+                            //PlayerCharater.CharactersInfo[i] = jsonDe.Response.destinyAccounts[0].characters[i].characterClass.className;
                         }
                         PlayerCharater.DestMembID = jsonDe.Response.destinyAccounts[0].userInfo.membershipId;
+                        Console.WriteLine("Got Destiny ID");
                         return "SUCCESS";
                     }
                     else
@@ -183,9 +205,9 @@ namespace DestinyTrialsStats
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                return "Unexpected Exception";
+                return "Unexpected Exception: " + ex.Message;
             }
         }
     }
